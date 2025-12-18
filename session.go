@@ -441,7 +441,7 @@ func (s *Session) recvLoop() {
 
 			// read payload from the underlying connection
 			pNewbuf := defaultAllocator.Get(int(hdr.Length()))
-			written, err := io.ReadFull(s.conn, *pNewbuf)
+			written, err := io.ReadFull(s.conn, pNewbuf)
 			if err != nil {
 				s.notifyReadError(err)
 

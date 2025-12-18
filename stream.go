@@ -605,7 +605,7 @@ func (s *stream) RemoteAddr() net.Addr {
 }
 
 // pushBytes append buf to buffers
-func (s *stream) pushBytes(pbuf []byte) (written int, err error) {
+func (s *stream) pushBytes(pbuf []byte) {
 	s.bufferLock.Lock()
 	defer s.bufferLock.Unlock()
 

@@ -48,7 +48,7 @@ func NewAllocator() *Allocator {
 		i := k
 		alloc.buffers[k].New = func() any {
 			b := make([]byte, 1<<uint32(i))
-			return &b
+			return b
 		}
 	}
 	return alloc

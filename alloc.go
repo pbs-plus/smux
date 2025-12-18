@@ -41,6 +41,9 @@ type Allocator struct {
 	buffers []sync.Pool
 }
 
+// NewAllocator initiates a []byte allocator for frames less than 65536 bytes,
+// the waste(memory fragmentation) of space allocation is guaranteed to be
+// no more than 50%.
 func NewAllocator() *Allocator {
 	alloc := new(Allocator)
 	alloc.buffers = make([]sync.Pool, 17) // 1B -> 64K
@@ -61,35 +64,27 @@ func (alloc *Allocator) Get(size int) []byte {
 	}
 
 	bits := msb(size)
-	idx := bits
-	if size != 1<<bits {
-		idx = bits + 1
+	if size == 1<<bits {
+		p := alloc.buffers[bits].Get().([]byte)
+		p = p[:size]
+		return p
 	}
-
-	if int(idx) >= len(alloc.buffers) {
-		return nil
-	}
-
-	buf := alloc.buffers[idx].Get().([]byte)
-	return buf[:size]
+	p := alloc.buffers[bits+1].Get().([]byte)
+	p = p[:size]
+	return p
 }
 
 // Put returns a []byte to pool for future use,
 // which the cap must be exactly 2^n
-func (alloc *Allocator) Put(buf []byte) error {
-	capacity := cap(buf)
-	if capacity == 0 || capacity > 65536 {
-		return errors.New("invalid buffer capacity")
+func (alloc *Allocator) Put(p []byte) error {
+	if p == nil {
+		return errors.New("allocator Put() incorrect buffer size")
 	}
-
-	bits := msb(capacity)
-	if capacity != 1<<bits {
-		return errors.New("buffer capacity not a power of two")
+	bits := msb(cap(p))
+	if cap(p) == 0 || cap(p) > 65536 || cap(p) != 1<<bits {
+		return errors.New("allocator Put() incorrect buffer size")
 	}
-
-	// Reset to full capacity
-	buf = buf[:capacity]
-	alloc.buffers[bits].Put(buf)
+	alloc.buffers[bits].Put(p)
 	return nil
 }
 
